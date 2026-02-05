@@ -1,123 +1,152 @@
-# WiseCare - Technical Design Document
+# WiseCare Technical Design Document
+
+**Version:** 1.0  
+**Date:** February 2026  
+**Document Type:** Technical Architecture Specification  
+
+---
+
+## Executive Summary
+
+This document outlines the comprehensive technical architecture for WiseCare, an AI-driven eldercare platform designed for the Indian market. The system leverages cloud-native technologies, IoT integration, and advanced AI agents to provide seamless care coordination between elderly users and their families abroad.
+
+## Table of Contents
+
+1. [System Architecture](#1-system-architecture)
+2. [Database Design](#2-database-design)
+3. [API Specification](#3-api-specification)
+4. [User Interface Guidelines](#4-user-interface-guidelines)
+5. [Technology Stack](#5-technology-stack)
+6. [Security & Compliance](#6-security--compliance)
+7. [Deployment Strategy](#7-deployment-strategy)
+
+---
 
 ## 1. System Architecture
 
-### Cloud-Native Architecture Overview
+### 1.1 Architecture Overview
 
-WiseCare follows a microservices-based, cloud-native architecture deployed on AWS. The system is designed for high availability, scalability, and real-time processing of IoT health data with AI-driven insights.
+WiseCare implements a cloud-native, microservices architecture on AWS, optimized for real-time health monitoring and AI-driven care automation. The system ensures 99.9% uptime with sub-2-second emergency response times.
 
-### Architecture Diagram
+### 1.2 System Architecture Diagram
 
 ```mermaid
 graph TB
+    %% Styling
+    classDef iotLayer fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef gatewayLayer fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px
+    classDef processingLayer fill:#E8F5E8,stroke:#388E3C,stroke-width:2px
+    classDef storageLayer fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+    classDef appLayer fill:#FFEBEE,stroke:#D32F2F,stroke-width:2px
+    classDef externalLayer fill:#F5F5F5,stroke:#616161,stroke-width:2px
+
     %% IoT Layer
-    subgraph "IoT Layer"
-        W[Wearables<br/>Heart Rate, BP]
-        C[Smart Cameras<br/>Fall Detection]
-        S[Smart Sensors<br/>Motion, Environment]
+    subgraph "IoT Device Layer"
+        W[📱 Wearable Devices<br/>Heart Rate • Blood Pressure<br/>Activity Monitoring]:::iotLayer
+        C[📹 Smart Cameras<br/>Fall Detection<br/>Activity Recognition]:::iotLayer
+        S[🏠 Environmental Sensors<br/>Motion • Door • Temperature]:::iotLayer
     end
     
     %% Gateway Layer
-    subgraph "Gateway Layer"
-        IG[AWS IoT Gateway<br/>MQTT/HTTP]
-        ALB[Application Load Balancer]
-        AG[API Gateway<br/>Rate Limiting, Auth]
+    subgraph "API Gateway Layer"
+        IG[🌐 AWS IoT Core<br/>MQTT/HTTPS Ingestion<br/>Device Management]:::gatewayLayer
+        ALB[⚖️ Application Load Balancer<br/>SSL Termination<br/>Health Checks]:::gatewayLayer
+        AG[🔐 API Gateway<br/>Authentication • Rate Limiting<br/>Request Routing]:::gatewayLayer
     end
     
     %% Processing Layer
-    subgraph "Processing Layer - Agentic AI"
-        ADE[Anomaly Detection Engine<br/>Real-time Analysis]
-        PM[Predictive Model<br/>Health Trends]
-        LLM[LLM Companion<br/>Chatbot & Cognitive Assessment]
-        LA[Logistics Agent<br/>Service Booking Automation]
+    subgraph "AI Processing Layer"
+        ADE[🚨 Anomaly Detection Engine<br/>Real-time Health Analysis<br/>Emergency Detection]:::processingLayer
+        PM[📊 Predictive Analytics<br/>Health Trend Analysis<br/>Risk Assessment]:::processingLayer
+        LLM[🤖 AI Companion Agent<br/>Conversational Support<br/>Cognitive Assessment]:::processingLayer
+        LA[📋 Logistics Agent<br/>Service Automation<br/>Appointment Scheduling]:::processingLayer
     end
     
     %% Storage Layer
-    subgraph "Storage Layer"
-        PG[(PostgreSQL<br/>User Data, Bookings)]
-        TS[(InfluxDB<br/>Time-Series Health Data)]
-        S3[(S3<br/>Media, Logs, Backups)]
-        REDIS[(Redis<br/>Cache, Sessions)]
+    subgraph "Data Storage Layer"
+        PG[(🗄️ PostgreSQL<br/>User Profiles • Bookings<br/>Relationships • Alerts)]:::storageLayer
+        TS[(📈 InfluxDB<br/>Time-Series Health Data<br/>Real-time Metrics)]:::storageLayer
+        S3[(☁️ Amazon S3<br/>Media Files • Backups<br/>ML Model Storage)]:::storageLayer
+        REDIS[(⚡ Redis Cache<br/>Session Management<br/>Real-time Data)]:::storageLayer
     end
     
     %% Application Layer
-    subgraph "Application Layer"
-        SA[Senior Mobile App<br/>Flutter]
-        FD[Family Dashboard<br/>React.js]
-        SP[Service Provider Portal<br/>React.js]
+    subgraph "Client Applications"
+        SA[📱 Senior Mobile App<br/>Flutter • Voice Interface<br/>Large UI • Accessibility]:::appLayer
+        FD[💻 Family Dashboard<br/>React.js • Real-time Charts<br/>Alert Management]:::appLayer
+        SP[👨‍⚕️ Provider Portal<br/>Service Management<br/>Patient Records]:::appLayer
     end
     
     %% External Services
-    subgraph "External Services"
-        SMS[SMS Gateway<br/>Twilio]
-        PUSH[Push Notifications<br/>FCM]
-        PAY[Payment Gateway<br/>Razorpay]
-        MAP[Maps API<br/>Google Maps]
+    subgraph "External Integrations"
+        SMS[📨 Twilio SMS<br/>Emergency Alerts]:::externalLayer
+        PUSH[🔔 Firebase FCM<br/>Push Notifications]:::externalLayer
+        PAY[💳 Razorpay<br/>Payment Processing]:::externalLayer
+        MAP[🗺️ Google Maps<br/>Location Services]:::externalLayer
     end
     
-    %% Connections
-    W --> IG
-    C --> IG
-    S --> IG
+    %% Data Flow Connections
+    W -.->|MQTT/HTTPS| IG
+    C -.->|Video Stream| IG
+    S -.->|Sensor Data| IG
     
-    IG --> ADE
-    IG --> TS
+    IG -->|Health Data| ADE
+    IG -->|Metrics Storage| TS
     
-    SA --> ALB
-    FD --> ALB
-    SP --> ALB
+    SA -->|HTTPS| ALB
+    FD -->|HTTPS| ALB
+    SP -->|HTTPS| ALB
     ALB --> AG
     
-    AG --> ADE
-    AG --> PM
-    AG --> LLM
-    AG --> LA
+    AG -->|Analysis Request| ADE
+    AG -->|Prediction Query| PM
+    AG -->|Chat Request| LLM
+    AG -->|Booking Request| LA
     
-    ADE --> PG
-    ADE --> TS
-    ADE --> SMS
-    ADE --> PUSH
+    ADE -->|Alert Storage| PG
+    ADE -->|Metrics Analysis| TS
+    ADE -.->|Emergency SMS| SMS
+    ADE -.->|Push Alert| PUSH
     
-    PM --> TS
-    PM --> PG
+    PM -->|Historical Data| TS
+    PM -->|Insights Storage| PG
     
-    LLM --> PG
-    LLM --> REDIS
+    LLM -->|User Context| PG
+    LLM -->|Session Cache| REDIS
     
-    LA --> PG
-    LA --> PAY
+    LA -->|Booking Creation| PG
+    LA -.->|Payment Processing| PAY
     
-    PG --> S3
-    TS --> S3
+    PG -.->|Backup| S3
+    TS -.->|Archive| S3
 ```
 
-### Component Details
+### 1.3 Component Specifications
 
-#### IoT Layer
-- **Wearables**: Heart rate monitors, blood pressure cuffs, smartwatches
-- **Smart Cameras**: AI-powered fall detection cameras
-- **Environmental Sensors**: Motion detectors, door sensors, temperature monitors
+| Layer | Component | Technology | Purpose | SLA |
+|-------|-----------|------------|---------|-----|
+| **IoT** | Device Gateway | AWS IoT Core | Device connectivity & management | 99.9% uptime |
+| **Gateway** | Load Balancer | AWS ALB | Traffic distribution | < 100ms latency |
+| **Gateway** | API Gateway | AWS API Gateway | Request routing & security | 99.95% uptime |
+| **Processing** | Anomaly Engine | Python/TensorFlow | Real-time health analysis | < 2s response |
+| **Processing** | AI Companion | AWS Bedrock | Conversational support | < 3s response |
+| **Storage** | Primary DB | PostgreSQL RDS | Structured data storage | 99.9% uptime |
+| **Storage** | Time-Series DB | InfluxDB | Health metrics storage | 99.5% uptime |
 
-#### Gateway Layer
-- **AWS IoT Core**: Handles MQTT/HTTP connections from IoT devices
-- **Application Load Balancer**: Distributes traffic across multiple instances
-- **API Gateway**: Manages API versioning, authentication, and rate limiting
+---
 
-#### Processing Layer (Agentic AI)
-- **Anomaly Detection Engine**: Real-time analysis of health metrics for emergency detection
-- **Predictive Model**: Machine learning models for health trend analysis
-- **LLM Companion**: Conversational AI for emotional support and cognitive assessment
-- **Logistics Agent**: Automated service booking and care coordination
+## 2. Database Design
 
-#### Storage Layer
-- **PostgreSQL**: Primary database for user profiles, bookings, and structured data
-- **InfluxDB**: Time-series database optimized for health metrics storage
-- **Amazon S3**: Object storage for media files, logs, and backups
-- **Redis**: In-memory cache for sessions and frequently accessed data
+### 2.1 Database Architecture
 
-## 2. Database Schema
+The system employs a polyglot persistence approach with specialized databases for different data types:
 
-### Core Tables/Collections
+- **PostgreSQL**: ACID-compliant relational data
+- **InfluxDB**: High-performance time-series health metrics
+- **Redis**: In-memory caching and session management
+- **S3**: Object storage for media and backups
+
+### 2.2 Core Database Schemas
 
 #### Users Table
 ```sql
